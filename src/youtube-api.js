@@ -32,6 +32,8 @@ export class YouTubeClient {
         this.quotaUsed = 0;
         this.requestCount = 0;
         this.errors = [];
+        /** @type {Map<string, string|null>} handle → channelId cache */
+        this._channelIdCache = new Map();
     }
 
     /**
@@ -120,7 +122,10 @@ export class YouTubeClient {
     async resolveChannelId(input) {
         if (!input || typeof input !== 'string') return null;
         const trimmed = input.trim();
-        if (!trimmed) return null;
+        if (!trimmed || trimmed.length > 300) return null;
+
+        // Reject inputs with characters that can't appear in URLs or handles
+        if (/[<>"{}|\\^`\x00-\x1f]/.test(trimmed)) return null;
 
         // Already a channel ID
         if (/^UC[\w-]{22}$/.test(trimmed)) return trimmed;
@@ -144,16 +149,31 @@ export class YouTubeClient {
             handle = trimmed;
         }
 
-        if (!handle) return null;
+        if (!handle || handle.length > 100 || !/^[\w.-]+$/.test(handle)) return null;
+
+        // Check cache first to save quota
+        const cacheKey = handle.toLowerCase();
+        if (this._channelIdCache.has(cacheKey)) {
+            return this._channelIdCache.get(cacheKey);
+        }
 
         // Try forHandle first (modern channels, 2023+)
         const data = await this._request('channels', { part: 'id', forHandle: handle }, 1);
-        if (data.items?.length > 0) return data.items[0].id;
+        if (data.items?.length > 0) {
+            const id = data.items[0].id;
+            this._channelIdCache.set(cacheKey, id);
+            return id;
+        }
 
         // Fallback to forUsername (legacy channels)
         const legacy = await this._request('channels', { part: 'id', forUsername: handle }, 1);
-        if (legacy.items?.length > 0) return legacy.items[0].id;
+        if (legacy.items?.length > 0) {
+            const id = legacy.items[0].id;
+            this._channelIdCache.set(cacheKey, id);
+            return id;
+        }
 
+        this._channelIdCache.set(cacheKey, null);
         return null;
     }
 

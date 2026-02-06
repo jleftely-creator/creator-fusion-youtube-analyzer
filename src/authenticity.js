@@ -55,6 +55,7 @@ export function analyzeAuthenticity(videos, channelStats) {
     if (videos.length < 3) {
         return {
             score: null,
+            status: 'insufficient_data',
             label: 'Insufficient data',
             note: 'Need at least 3 videos with engagement data for authenticity analysis.',
             flags: [],
@@ -73,6 +74,7 @@ export function analyzeAuthenticity(videos, channelStats) {
     if (eligible.length < 3) {
         return {
             score: null,
+            status: 'insufficient_data',
             label: 'Insufficient data',
             note: 'Need at least 3 videos with 100+ views for authenticity analysis.',
             flags: [],

@@ -216,7 +216,10 @@ async function processChannel(client, channelInput, options) {
     // 8. Optional: Authenticity check
     let authenticity = null;
     if (enableAuthenticityCheck) {
-        authenticity = analyzeAuthenticity(parsed, channelData.statistics);
+        const result = analyzeAuthenticity(parsed, channelData.statistics);
+        // Only include authenticity data when a score was computed;
+        // null score means insufficient data — omit from output
+        authenticity = result.score !== null ? result : null;
     }
 
     // 9. Optional: Rate card

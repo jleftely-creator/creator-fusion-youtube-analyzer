@@ -58,6 +58,9 @@ export function parseVideos(videos) {
             // Guard against invalid dates
             if (Number.isNaN(publishedAt.getTime())) return null;
 
+            const duration = v.contentDetails?.duration ?? 'PT0S';
+            const durationSeconds = parseDuration(duration);
+
             return {
                 videoId: v.id,
                 title: v.snippet?.title ?? 'Unknown',
@@ -67,7 +70,9 @@ export function parseVideos(videos) {
                 views,
                 likes,
                 comments,
-                duration: v.contentDetails?.duration ?? 'PT0S',
+                duration,
+                durationSeconds,
+                isShort: durationSeconds > 0 && durationSeconds <= 60,
                 engagement: views > 0 ? ((likes + comments) / views) * 100 : 0,
                 likesDisabled: stats.likeCount === undefined,
                 commentsDisabled: stats.commentCount === undefined,
@@ -360,4 +365,13 @@ function fmtNum(n) {
     if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
     if (n >= 1_000)     return `${(n / 1_000).toFixed(1)}K`;
     return String(n);
+}
+
+/** Parse ISO 8601 duration (e.g. PT1H2M30S) to total seconds. */
+function parseDuration(iso) {
+    const m = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+    if (!m) return 0;
+    return (parseInt(m[1] || '0', 10) * 3600)
+         + (parseInt(m[2] || '0', 10) * 60)
+         + parseInt(m[3] || '0', 10);
 }

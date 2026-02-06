@@ -136,6 +136,7 @@ export function generateRateCard({
     }
 
     return {
+        currency: 'USD',
         estimatedIntegrationRate: integration,
         estimatedDedicatedRate:   dedicated,
         estimatedShortsRate:      shorts,

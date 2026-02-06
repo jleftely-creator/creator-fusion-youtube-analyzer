@@ -69,6 +69,10 @@ const AFFILIATE_PATTERNS = [
     { name: 'Established Titles',   pattern: /establishedtitles\.com/i },
     { name: 'Athletic Greens/AG1',  pattern: /(?:athleticgreens|drinkag1)\.com/i },
     { name: 'Casetify',             pattern: /casetify\.com\/[\w]+/i },
+    { name: 'Fiverr',               pattern: /fiverr\.com\/[\w]+/i },
+    { name: 'Canva',                pattern: /canva\.com\/[\w]+/i },
+    { name: 'Monday.com',           pattern: /monday\.com\/[\w]+/i },
+    { name: 'Notion',               pattern: /notion\.so\/[\w]+/i },
 ];
 
 /** Promo code pattern: "code WORD" or "code: WORD" */
@@ -110,8 +114,9 @@ export function detectSponsorships(videos) {
             if (match) {
                 signals.push({ type: 'phrase', value: match[0].trim() });
 
-                // Try to extract brand name from "sponsored by BRAND" patterns
-                const brandMatch = desc.match(/(?:sponsored|brought\s+to\s+you)\s+by\s+([\w\s&'.]+?)(?:\.|,|!|\n|$)/i);
+                // Try to extract brand name from sponsorship patterns
+                const brandMatch = desc.match(/(?:sponsored|brought\s+to\s+you)\s+by\s+([\w\s&'.]+?)(?:\.|,|!|\n|$)/i)
+                    ?? desc.match(/\bthanks?\s+to\s+([\w\s&'.]+?)\s+for\s+sponsor/i);
                 if (brandMatch) {
                     const brand = brandMatch[1].trim();
                     if (brand.length >= 2 && brand.length <= 40) {
