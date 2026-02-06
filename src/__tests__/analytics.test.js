@@ -90,6 +90,20 @@ describe('parseVideos', () => {
         assert.equal(parsed[0].isShort, false);
     });
 
+    it('should parse day component in duration (P1DT12H)', () => {
+        const raw = [makeRawVideo({ duration: 'P1DT12H' })];
+        const parsed = parseVideos(raw);
+        assert.equal(parsed[0].durationSeconds, 86400 + 43200); // 1 day + 12 hours
+        assert.equal(parsed[0].isShort, false);
+    });
+
+    it('should parse day-only duration (P2D)', () => {
+        const raw = [makeRawVideo({ duration: 'P2D' })];
+        const parsed = parseVideos(raw);
+        assert.equal(parsed[0].durationSeconds, 172800); // 2 days
+        assert.equal(parsed[0].isShort, false);
+    });
+
     it('should sort videos by publishedAt descending', () => {
         const raw = [
             makeRawVideo({ id: 'old', publishedAt: '2025-01-01T00:00:00Z' }),

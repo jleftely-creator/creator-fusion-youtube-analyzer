@@ -32,7 +32,7 @@ export class YouTubeClient {
         this.quotaUsed = 0;
         this.requestCount = 0;
         this.errors = [];
-        /** @type {Map<string, string|null>} handle → channelId cache */
+        /** @type {Map<string, Promise<string|null>>} handle → resolution promise cache */
         this._channelIdCache = new Map();
     }
 
@@ -145,35 +145,40 @@ export class YouTubeClient {
             handle = customMatch[1];
         } else if (trimmed.startsWith('@')) {
             handle = trimmed.substring(1);
-        } else if (!trimmed.includes('/') && !trimmed.includes('.')) {
+        } else if (!trimmed.includes('/')) {
+            // Allow dots in direct handle inputs (e.g. "mr.beast") —
+            // YouTube handles can contain dots
             handle = trimmed;
         }
 
         if (!handle || handle.length > 100 || !/^[\w.-]+$/.test(handle)) return null;
 
-        // Check cache first to save quota
+        // Cache the resolution promise to prevent concurrent calls for the
+        // same handle from firing duplicate API requests (important for MCP)
         const cacheKey = handle.toLowerCase();
         if (this._channelIdCache.has(cacheKey)) {
             return this._channelIdCache.get(cacheKey);
         }
 
+        const promise = this._lookupHandle(handle);
+        this._channelIdCache.set(cacheKey, promise);
+        return promise;
+    }
+
+    /**
+     * Internal: resolve a handle to a channel ID via API.
+     * @param {string} handle
+     * @returns {Promise<string|null>}
+     */
+    async _lookupHandle(handle) {
         // Try forHandle first (modern channels, 2023+)
         const data = await this._request('channels', { part: 'id', forHandle: handle }, 1);
-        if (data.items?.length > 0) {
-            const id = data.items[0].id;
-            this._channelIdCache.set(cacheKey, id);
-            return id;
-        }
+        if (data.items?.length > 0) return data.items[0].id;
 
         // Fallback to forUsername (legacy channels)
         const legacy = await this._request('channels', { part: 'id', forUsername: handle }, 1);
-        if (legacy.items?.length > 0) {
-            const id = legacy.items[0].id;
-            this._channelIdCache.set(cacheKey, id);
-            return id;
-        }
+        if (legacy.items?.length > 0) return legacy.items[0].id;
 
-        this._channelIdCache.set(cacheKey, null);
         return null;
     }
 

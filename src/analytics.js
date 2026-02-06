@@ -367,11 +367,12 @@ function fmtNum(n) {
     return String(n);
 }
 
-/** Parse ISO 8601 duration (e.g. PT1H2M30S) to total seconds. */
+/** Parse ISO 8601 duration (e.g. PT1H2M30S, P1DT12H) to total seconds. */
 function parseDuration(iso) {
-    const m = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+    const m = iso.match(/P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?/);
     if (!m) return 0;
-    return (parseInt(m[1] || '0', 10) * 3600)
-         + (parseInt(m[2] || '0', 10) * 60)
-         + parseInt(m[3] || '0', 10);
+    return (parseInt(m[1] || '0', 10) * 86400)
+         + (parseInt(m[2] || '0', 10) * 3600)
+         + (parseInt(m[3] || '0', 10) * 60)
+         + parseInt(m[4] || '0', 10);
 }
